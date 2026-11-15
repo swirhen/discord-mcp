@@ -20,6 +20,7 @@ os.environ.update({
     'DISCORD_API_BASE': f'http://127.0.0.1:{DISCORD_PORT}/api',
     'DISCORD_MCP_ACCOUNTS_DIR': str(tmp / 'accounts'),
     'DISCORD_MCP_CLIENTS_FILE': str(tmp / 'clients.json'),
+    'DISCORD_MCP_PUBLIC_URL': 'https://example.com/discord_mcp/mcp',
     'DISCORD_MCP_ADMIN_USERNAME': 'admin',
     'DISCORD_MCP_ADMIN_PASSWORD': 'pass-word',
     'DISCORD_MCP_ADMIN_SECRET': 'test-secret',
@@ -126,8 +127,11 @@ def run():
     # ---- AI コネクタ ----
     r = c.post('/api/clients', json={'id': 'claude', 'name': 'Claude', 'avatar_url': 'https://example.com/c.png', 'accounts': ['main']})
     cl = r.json()
-    check('client created with url', r.status_code == 200 and cl['url'].startswith('https://swirhen.tv/discord_mcp/mcp/')
+    check('client created with url', r.status_code == 200 and cl['url'].startswith('https://example.com/discord_mcp/mcp/')
           and cl['post_as'] == 'webhook' and cl['accounts'] == ['main'] and cl['avatar_url'] == 'https://example.com/c.png', r.text)
+    saved_base, clients.PUBLIC_BASE = clients.PUBLIC_BASE, ''
+    check('relative url without public url', clients.connector_url(cl) == '../mcp/' + cl['token'])
+    clients.PUBLIC_BASE = saved_base
     found = clients.find_by_token(cl['token'])
     check('MCP side sees new client immediately', found is not None and found['id'] == 'claude', found)
     r = c.post('/api/clients', json={'id': 'claude', 'name': 'X'})
