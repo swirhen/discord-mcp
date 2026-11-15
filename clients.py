@@ -7,7 +7,8 @@ AI ごとに 1 つのコネクタ URL (/mcp/<トークン>) を発行し、URL �
 
 AI ごとの設定:
   id          英小文字・数字・ハイフン・アンダースコアで 32 文字まで (ログとツールの結果に出る)
-  name        webhook で投稿するときの表示名 (例 "Claude"。80 文字まで。"discord" "clyde" を含む名前は Discord が断る)
+  name        webhook で投稿するときの表示名 (例 "Claude"。80 文字まで。"discord" "clyde" "@" "#" ":" "```" を含む名前と、
+              "everyone" "here" は Discord が断る)
   avatar_url  webhook で投稿するときのアイコン画像の URL
   post_as     "webhook" (既定。チャンネルの webhook で、name・アイコンを付けて投稿する) か "bot" (ボット自身の名前で投稿する)
   accounts    使ってよいアカウント名の一覧 (省略か空ならすべて)
@@ -37,7 +38,32 @@ PUBLIC_BASE = os.environ.get('DISCORD_MCP_PUBLIC_URL', 'https://swirhen.tv/disco
 ID_RE = re.compile(r'^[a-z0-9_-]{1,32}$')
 TOKEN_RE = re.compile(r'^[0-9a-f]{64}$')
 POST_AS = ('webhook', 'bot')
-BAD_NAME = re.compile(r'discord|clyde', re.IGNORECASE)
+# Discord が webhook の名前・投稿ごとの表示名として断るもの (大文字小文字は区別しない)
+BAD_SUBSTRINGS = ('discord', 'clyde', '@', '#', ':', '```')
+BAD_EXACT = ('everyone', 'here')
+
+
+def name_problem(name: str) -> str | None:
+    """webhook の表示名として Discord に断られる理由 (問題なければ None)"""
+    name = (name or '').strip()
+    if not name or len(name) > 80:
+        return '表示名は 1〜80 文字'
+    lowered = name.lower()
+    found = [s for s in BAD_SUBSTRINGS if s in lowered]
+    if found:
+        return f'表示名に {"・".join(repr(s) for s in found)} は使えない (Discord が webhook の名前として断る)'
+    if lowered in BAD_EXACT:
+        return f'表示名を "{name}" にはできない (Discord が断る)'
+    return None
+
+
+def safe_webhook_name(name: str) -> str:
+    """古い設定などで使えない文字が入っていても投稿が失敗しないよう、使えない部分を取り除く"""
+    out = name or ''
+    for s in BAD_SUBSTRINGS:
+        out = re.sub(re.escape(s), '', out, flags=re.IGNORECASE)
+    out = re.sub(r'\s+', ' ', out).strip()[:80]
+    return out if out and out.lower() not in BAD_EXACT else 'AI'
 
 _cache: dict = {'key': None, 'clients': []}
 
@@ -122,10 +148,9 @@ def _apply_options(entry: dict, options: dict) -> None:
         raise ValueError(f'知らない項目: {", ".join(sorted(unknown))}')
     if options.get('name') is not None:
         name = str(options['name']).strip()
-        if not name or len(name) > 80:
-            raise ValueError('表示名は 1〜80 文字')
-        if BAD_NAME.search(name):
-            raise ValueError('表示名に "discord" "clyde" は使えない (Discord が webhook の名前として断る)')
+        problem = name_problem(name)
+        if problem:
+            raise ValueError(problem)
         entry['name'] = name
     if options.get('avatar_url') is not None:
         url = str(options['avatar_url']).strip()

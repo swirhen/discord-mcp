@@ -23,6 +23,7 @@ MCP_PORT = 18010
 TOKEN = 'ab' * 32          # tester: ボット自身の名前で投稿する
 TOKEN_CLAUDE = 'c1' * 32   # claude: webhook で「Claude」として投稿する
 TOKEN_VIEWER = 'd2' * 32   # viewer: 読み取り専用、アカウント sub だけ
+TOKEN_LEGACY = 'e3' * 32   # legacy: 表示名に Discord が断る文字が入っている
 
 sys.path.insert(0, str(ROOT / 'tests'))
 import fake_discord as fd  # noqa: E402
@@ -36,6 +37,8 @@ tmp = pathlib.Path(tempfile.mkdtemp(prefix='discord-mcp-test-'))
     {'id': 'claude', 'token': TOKEN_CLAUDE, 'name': 'Claude', 'avatar_url': 'https://example.com/claude.png'},
     {'id': 'viewer', 'token': TOKEN_VIEWER, 'read_only': True, 'accounts': ['sub']},
     {'id': 'BROKEN', 'token': 'zz'},
+    # 名前の検証を入れる前に保存された想定 (Discord が断る文字が入っている)
+    {'id': 'legacy', 'token': TOKEN_LEGACY, 'name': 'Discord Bot: v2'},
 ]}), encoding='utf-8')
 os.environ['DISCORD_API_BASE'] = f'http://127.0.0.1:{DISCORD_PORT}/api'
 os.environ['DISCORD_MCP_ACCOUNTS_DIR'] = str(tmp / 'accounts')
@@ -290,6 +293,7 @@ async def run_tests():  # noqa: C901
             check('accounts: errors per account', 'error' in acc['bad'] and 'bot_token' in acc['broken']['error'], r)
 
     await webhook_tests()
+    await legacy_tests()
     await viewer_tests()
 
     # 間違ったコネクタ URL は 404
@@ -312,6 +316,8 @@ async def webhook_tests():
             r = await call(session, 'discord_send_message', account='main', channel_id=fd.C_GENERAL, content='やあ',
                            reply_to='1300000000000000001')
             sent = fd.state['sent'][-1]
+            created = fd.WEBHOOKS[fd.C_GENERAL][0]
+            check('webhook: own name has no "discord"', 'discord' not in (created.get('name') or '').lower(), created)
             check('webhook: sent via webhook', r.get('ok') and sent.get('via') == 'webhook' and 'Claude' in r['posted_as'], r)
             check('webhook: name + avatar', sent['body']['username'] == 'Claude'
                   and sent['body']['avatar_url'] == 'https://example.com/claude.png', sent)
@@ -359,10 +365,24 @@ async def webhook_tests():
             check('webhook: upload', r.get('ok') and sent.get('via') == 'webhook' and sent['files'][0]['data'] == 'メモ'.encode()
                   and sent['body']['content'].startswith('-# ↪ 返信:'), sent)
 
+            # 本文に discord と書いてあっても送れる (断られるのは名前だけ)
+            r = await call(session, 'discord_send_message', account='main', channel_id=fd.C_GENERAL, content='Discord の話')
+            check('webhook: "discord" in content ok', r.get('ok') and fd.state['sent'][-1]['body']['content'] == 'Discord の話', r)
+
             # 誰かが webhook を消していたら、作り直して送る
             fd.WEBHOOKS[fd.C_GENERAL].clear()
             r = await call(session, 'discord_send_message', account='main', channel_id=fd.C_GENERAL, content='消えても大丈夫')
             check('webhook: recreated after deletion', r.get('ok') and fd.state['webhooks_created'].count(fd.C_GENERAL) == 2, r)
+
+
+async def legacy_tests():
+    """legacy: 表示名に "Discord" や ":" が入っていても、使えない部分を除いて投稿できる"""
+    async with streamable_http_client(f'http://127.0.0.1:{MCP_PORT}/mcp/{TOKEN_LEGACY}') as (read, write, *_):
+        async with ClientSession(read, write) as session:
+            await session.initialize()
+            r = await call(session, 'discord_send_message', account='main', channel_id=fd.C_GENERAL, content='古い名前')
+            sent = fd.state['sent'][-1]
+            check('legacy name sanitized', r.get('ok') and sent['body']['username'] == 'Bot v2', (r, sent['body']))
 
 
 async def viewer_tests():

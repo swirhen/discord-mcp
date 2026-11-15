@@ -244,6 +244,8 @@ def handle(token, method, path, query, body):  # noqa: C901 (試験用なので 
                 return E(403, 50013, 'Missing Permissions')
             if method == 'GET':
                 return 200, WEBHOOKS.get(cid, [])
+            if bad_webhook_name(body.get('name', '')):
+                return E(400, 50035, 'Invalid Form Body; name: Username cannot contain "discord"')
             hook = {'id': new_id(), 'token': f'hooktoken-{cid}', 'type': 1, 'application_id': BOTS[token]['id'],
                     'channel_id': cid, 'name': body.get('name')}
             WEBHOOKS.setdefault(cid, []).append(hook)
@@ -300,6 +302,13 @@ def handle(token, method, path, query, body):  # noqa: C901 (試験用なので 
     return E(404, 0, f'404: Not Found ({method} {path})')
 
 
+def bad_webhook_name(name):
+    """本物の Discord と同じく、webhook の名前・表示名に使えないもの"""
+    lowered = (name or '').lower()
+    return (not lowered.strip() or len(name) > 80 or lowered in ('everyone', 'here')
+            or any(s in lowered for s in ('discord', 'clyde', '@', '#', ':', '```')))
+
+
 def handle_webhook(method, path, query, body, authorized):
     """/webhooks/{id}/{token}... (URL のトークンで認証する。Authorization は付けない)"""
     q = {k: v[0] for k, v in query.items()}
@@ -329,6 +338,8 @@ def handle_webhook(method, path, query, body, authorized):
         return E(400, 0, 'wait=true で実行する')
     if 'message_reference' in body:
         return E(400, 50035, 'webhook は返信を作れない')
+    if 'username' in body and bad_webhook_name(body['username']):
+        return E(400, 50035, 'Invalid Form Body; username: Username cannot contain "discord"')
     if body.get('thread_name'):
         tid = new_id()
         THREADS[tid] = {'id': tid, 'guild_id': CHANNELS[hook['channel_id']]['guild_id'], 'type': 11, 'name': body['thread_name'],

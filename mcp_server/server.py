@@ -60,7 +60,7 @@ sys.path.insert(0, str(REPO_DIR))
 from accounts import AccountError, list_accounts, read_account  # noqa: E402
 from bot import (CONTENT_NOTE, THREAD_TYPES, Bot, invite_url, attachment_view, channel_type, emoji_text, fmt_time,  # noqa: E402
                  has_missing_content, is_snowflake, jump_url, message_view, snowflake_time, to_snowflake, user_view)
-from clients import CLIENTS_FILE, find_by_id, find_by_token, load_clients  # noqa: E402
+from clients import CLIENTS_FILE, find_by_id, find_by_token, load_clients, safe_webhook_name  # noqa: E402
 from discord_client import DiscordError, Pending, download, request  # noqa: E402
 
 PORT = int(os.environ.get('DISCORD_MCP_PORT', '8011'))
@@ -221,7 +221,7 @@ class Poster:
         if not self.uses_webhook(channel):
             return await self.bot.call('POST', f'/channels/{channel["id"]}/messages', body=body, files=files)
         body = {k: v for k, v in body.items() if k != 'message_reference'}  # webhook は返信を作れない
-        body['username'] = self.client['name']
+        body['username'] = safe_webhook_name(self.client['name'])  # 使えない文字が入っていても失敗させない
         if self.client.get('avatar_url'):
             body['avatar_url'] = self.client['avatar_url']
         for attempt in range(2):

@@ -138,7 +138,7 @@ ul.perms { columns: 2; margin: 6px 0; padding-left: 20px; }
     <label class="field"><span>ID</span><input type="text" name="id" pattern="[a-z0-9_\-]{1,32}" required placeholder="claude">
       <small>英小文字・数字・ハイフン・アンダースコアで 32 文字まで。ログと AI への表示に使います。後から変えられません。</small></label>
     <label class="field"><span>表示名</span><input type="text" name="name" required maxlength="80" placeholder="Claude">
-      <small>webhook で投稿するときの名前です。"discord" "clyde" を含む名前は Discord が受け付けません。</small></label>
+      <small>webhook で投稿するときの名前です。"discord" "clyde" "@" "#" ":" "```" を含む名前と、"everyone" "here" は Discord が受け付けません。</small></label>
     <label class="field"><span>アイコン画像の URL</span><input type="url" name="avatar_url" placeholder="https://…/icon.png">
       <small>空ならボットのアイコンの代わりに webhook の既定のアイコンになります。</small></label>
     <label class="field"><span>投稿方法</span>

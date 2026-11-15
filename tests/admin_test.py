@@ -134,6 +134,9 @@ def run():
     check('duplicate client refused', r.status_code == 400, r.text)
     r = c.post('/api/clients', json={'id': 'gpt', 'name': 'Discord Helper'})
     check('name with "discord" refused', r.status_code == 400 and 'discord' in r.json()['detail'], r.text)
+    for bad in ('Claude @home', 'AI #1', 'Bot: v2', 'everyone', 'CLYDE'):
+        r = c.post('/api/clients', json={'id': 'gpt', 'name': bad})
+        check(f'name {bad!r} refused', r.status_code == 400 and '表示名' in r.json()['detail'], r.text)
     r = c.post('/api/clients', json={'id': 'gpt', 'name': 'GPT', 'avatar_url': 'http://insecure'})
     check('non-https avatar refused', r.status_code == 400 and 'https' in r.json()['detail'], r.text)
     r = c.post('/api/clients', json={'id': 'gpt', 'name': 'GPT', 'post_as': 'user'})

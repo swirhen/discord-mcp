@@ -121,7 +121,7 @@ python clients.py remove viewer
 
 | 設定 | 意味 |
 | --- | --- |
-| `name` | webhook で投稿するときの表示名 (80 文字まで。"discord" "clyde" を含む名前は Discord が断る) |
+| `name` | webhook で投稿するときの表示名 (80 文字まで。"discord" "clyde" "@" "#" ":" "```" を含む名前と "everyone" "here" は Discord が断るので、保存の時点で断る) |
 | `avatar_url` | webhook で投稿するときのアイコン画像の URL |
 | `post_as` | `webhook` (既定): AI の名前とアイコンで投稿する / `bot`: ボット自身の名前で投稿する |
 | `accounts` | 使ってよいアカウント名 (空ならすべて) |
@@ -129,7 +129,9 @@ python clients.py remove viewer
 
 ### webhook での投稿 (`post_as = "webhook"`)
 
-- 送るチャンネル (スレッドなら親のチャンネル) に、このアプリの webhook (`discord-mcp`) を 1 つ作って使い回す。投稿ごとに AI の名前とアイコンを付ける
+- 送るチャンネル (スレッドなら親のチャンネル) に、このアプリの webhook (`mcp-bridge`) を 1 つ作って使い回す。投稿ごとに AI の名前とアイコンを付ける
+  (Discord は webhook の名前に "discord" を含めると断るので、リポジトリ名は使わない)
+- 表示名に Discord が断る文字が入っていたとき (保存の検証より前に作った設定など) は、その部分を取り除いて投稿する。本文に "discord" と書くのは問題ない
 - 対象はメッセージの送信 (`discord_send_message`)、ファイル (`discord_upload_file`)、スレッドの最初のメッセージ、フォーラムの投稿 (`discord_create_thread`)
 - webhook は返信を作れないので、返信は `-# ↪ 返信: <返信先のリンク>` を先頭に付けて送る
 - DM・リアクションは webhook ではできないので、ボットの名前になる。スレッドの作成者 (フォーラム以外) もボット

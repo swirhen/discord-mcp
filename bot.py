@@ -24,7 +24,9 @@ CHANNELS_TTL = 60
 CHANNEL_TTL = 300
 ROLES_TTL = 300
 CONCISE_CHARS = 300
-WEBHOOK_NAME = 'discord-mcp'
+# チャンネルに作る webhook の名前。Discord は webhook の名前に "discord" "clyde" などを含めると断るので、
+# リポジトリ名 (discord-mcp) は使わない
+WEBHOOK_NAME = 'mcp-bridge'
 
 # ボットに要る権限 (ビット, 画面の表示名)。招待 URL と管理画面の権限の確かめに使う
 PERMISSIONS = [
