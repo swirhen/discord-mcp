@@ -1,0 +1,10 @@
+# Discord のボットトークンを含む設定 (アカウントごと)
+accounts/
+# AI ごとのコネクタの設定 (URL のトークンを含む)
+clients.json
+__pycache__/
+*.tmp
+*.log
+logs/
+# ローカル開発用の管理画面のログイン情報
+idpass.txt

@@ -1,0 +1,20 @@
+[Unit]
+Description=discord-mcp 管理画面 (AI のコネクタと Discord のボットの設定)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=swirhen
+Group=swirhen
+WorkingDirectory=/home/swirhen/discord-mcp
+# DISCORD_MCP_ADMIN_USERNAME・DISCORD_MCP_ADMIN_PASSWORD・DISCORD_MCP_ADMIN_SECRET はここに書く (root 所有・600)
+EnvironmentFile=/etc/default/discord-mcp-admin
+Environment=DISCORD_MCP_ADMIN_SECURE_COOKIE=1
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/swirhen/discord-mcp/.venv/bin/python -m uvicorn --app-dir web api:app --host 127.0.0.1 --port 8012 --no-access-log
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

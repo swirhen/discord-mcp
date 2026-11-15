@@ -1,0 +1,17 @@
+# Discord アカウント (ボット) の設定の例。accounts/<アカウント名>.toml にコピーして使う。
+# アカウント名 (ファイル名) は英小文字・数字・ハイフン・アンダースコアで 32 文字まで。
+# MCP の各ツールの account にこの名前を指定する。1 つのボットで、招待したサーバー全部を扱える。
+#
+# bot_token は Discord Developer Portal の Bot ページで Reset Token して得たトークン。
+# 作り方は README の「ボットの作成と招待」を参照。
+bot_token = "MTAwMDAwMDAwMDAwMDAwMDAwMA.Gxxxxx.xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# 任意。アカウント一覧に出す説明
+label = "MCP 用のボット"
+
+# 任意。true にするとこのアカウントでは読み取りだけできる (送信・リアクション・スレッド作成などは断る)
+read_only = false
+
+# 任意。扱ってよいサーバーの ID。書くとそれ以外のサーバー (ボットが入っていても) は一覧に出さず、読み書きも断る。
+# 省略するか空ならボットが入っているサーバー全部。
+# servers = ["123456789012345678", "234567890123456789"]

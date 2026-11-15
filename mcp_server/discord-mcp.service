@@ -1,0 +1,17 @@
+[Unit]
+Description=discord-mcp (複数の Discord サーバーを扱う MCP サーバー)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=swirhen
+Group=swirhen
+WorkingDirectory=/home/swirhen/discord-mcp
+ExecStart=/home/swirhen/discord-mcp/.venv/bin/python mcp_server/server.py
+Restart=on-failure
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
